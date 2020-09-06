@@ -298,7 +298,7 @@ const Icon = memo(({ icon }) => {
                   : undefined
               }
               className={clsx('absolute inset-0 z-10 p-1', {
-                'pointer-events-none': state !== 'active',
+                // 'pointer-events-none': state !== 'active',
               })}
             >
               <div className="absolute top-1/2 left-1/2 w-8 h-8 -ml-4 -mt-4 bg-white bg-opacity-75" />
@@ -819,7 +819,7 @@ export default function Home({ version }) {
           }`}
         />
       </Head>
-      <Header version={version} />
+      {/* <Header version={version} /> */}
       <main className="bg-white">
         <Search />
         <div className="px-4 sm:px-6 lg:px-16">
