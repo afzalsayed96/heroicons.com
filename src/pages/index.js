@@ -6,6 +6,7 @@ import tags from '../data/tags'
 import Alert from '@reach/alert'
 import { Transition } from '@tailwindui/react'
 import Head from 'next/head'
+import copyTextToClipboard from 'copy-text-to-clipboard'
 
 const ENTER = 13
 const UP = 38
@@ -128,7 +129,7 @@ function copyIcon(icon, as) {
     .replace(/"\/>/g, '" />')
 
   if (as === 'jsx') {
-    return navigator.clipboard.writeText(jsx)
+    return copyTextToClipboard(jsx)
   }
 
   let svg = jsx
@@ -145,7 +146,7 @@ function copyIcon(icon, as) {
     )
     .replace('view-box=', 'viewBox=')
 
-  return navigator.clipboard.writeText(svg)
+  return copyTextToClipboard(svg)
 }
 
 const Icon = memo(({ icon }) => {
@@ -154,9 +155,9 @@ const Icon = memo(({ icon }) => {
 
   function copy(as) {
     if (state === 'copied') return
-    copyIcon(icon, as).then(() => {
+    if (copyIcon(icon, as)){
       setState('copied')
-    })
+    }
   }
 
   function activate() {
