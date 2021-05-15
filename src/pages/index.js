@@ -4,7 +4,7 @@ import createStore from 'zustand'
 import clsx from 'clsx'
 import tags from '../data/tags'
 import Alert from '@reach/alert'
-import { Transition } from '@tailwindui/react'
+import { Transition } from '@headlessui/react'
 import Head from 'next/head'
 import copyTextToClipboard from 'copy-text-to-clipboard'
 
@@ -31,22 +31,19 @@ function importIcons(r, type, attrs) {
   })
 }
 
-const iconsMedium = importIcons(
-  require.context(`heroicons/outline/`, false, /\.svg$/),
-  'md',
-  {
-    width: 24,
-    height: 24,
-    fill: 'none',
-    viewBox: '0 0 24 24',
-    stroke: 'currentColor',
-  }
-)
-const iconsSmall = importIcons(
-  require.context(`heroicons/solid/`, false, /\.svg$/),
-  'sm',
-  { width: 20, height: 20, viewBox: '0 0 20 20', fill: 'currentColor' }
-)
+const iconsMedium = importIcons(require.context(`heroicons/outline/`, false, /\.svg$/), 'md', {
+  width: 24,
+  height: 24,
+  fill: 'none',
+  viewBox: '0 0 24 24',
+  stroke: 'currentColor',
+})
+const iconsSmall = importIcons(require.context(`heroicons/solid/`, false, /\.svg$/), 'sm', {
+  width: 20,
+  height: 20,
+  viewBox: '0 0 20 20',
+  fill: 'currentColor',
+})
 const iconCount = iconsMedium.length
 
 const useStore = createStore((set) => ({
@@ -56,9 +53,7 @@ const useStore = createStore((set) => ({
     set({
       query,
       filter: query
-        ? matchSorter(iconsMedium, query, { keys: ['name', 'tags'] }).map(
-            (x) => x.name
-          )
+        ? matchSorter(iconsMedium, query, { keys: ['name', 'tags'] }).map((x) => x.name)
         : undefined,
     })
   },
@@ -68,9 +63,7 @@ function stringifyAttrs(attrs, filter = () => true) {
   let str = Object.keys(attrs)
     .filter(filter)
     .map((attr) =>
-      /^[0-9.]+$/.test(attrs[attr])
-        ? `${attr}={${attrs[attr]}}`
-        : `${attr}="${attrs[attr]}"`
+      /^[0-9.]+$/.test(attrs[attr]) ? `${attr}={${attrs[attr]}}` : `${attr}="${attrs[attr]}"`
     )
     .join(' ')
   if (str) return ` ${str}`
@@ -102,7 +95,11 @@ function copyIcon(icon, as) {
   let jsx =
     `<svg` +
     stringifyAttrs(
-      { xmlns: 'http://www.w3.org/2000/svg', ...icon.attrs },
+      {
+        xmlns: 'http://www.w3.org/2000/svg',
+        ...(icon.type === 'sm' ? { className: 'h-5 w-5' } : { className: 'h-6 w-6' }),
+        ...icon.attrs,
+      },
       (a) => !['width', 'height'].includes(a)
     ) +
     `>` +
@@ -133,16 +130,12 @@ function copyIcon(icon, as) {
   }
 
   let svg = jsx
+    .replace('className=', 'class=')
     .replace(/=\{([^}]+)\}/g, '="$1"')
     .replace(
       /(\s)([a-z]+)="/gi,
       (_, ws, attr) =>
-        ws +
-        attr.replace(
-          /([a-z])([A-Z])/g,
-          (_, p1, p2) => `${p1}-${p2.toLowerCase()}`
-        ) +
-        '="'
+        ws + attr.replace(/([a-z])([A-Z])/g, (_, p1, p2) => `${p1}-${p2.toLowerCase()}`) + '="'
     )
     .replace('view-box=', 'viewBox=')
 
@@ -187,11 +180,7 @@ const Icon = memo(({ icon }) => {
       setActiveType('jsx')
     } else if (activeType === 'jsx' && e.which === UP) {
       setActiveType('svg')
-    } else if (
-      state === 'active' &&
-      activeType &&
-      [ENTER, SPACE].includes(e.which)
-    ) {
+    } else if (state === 'active' && activeType && [ENTER, SPACE].includes(e.which)) {
       copy(activeType)
     }
   }
@@ -294,9 +283,7 @@ const Icon = memo(({ icon }) => {
               aria-labelledby={`${icon.name}-${icon.type}-btn`}
               tabIndex={-1}
               aria-activedescendant={
-                activeType
-                  ? `${icon.name}-${icon.type}-${activeType}`
-                  : undefined
+                activeType ? `${icon.name}-${icon.type}-${activeType}` : undefined
               }
               className={clsx('absolute inset-0 z-10 p-1', {
                 // 'pointer-events-none': state !== 'active',
@@ -308,7 +295,8 @@ const Icon = memo(({ icon }) => {
                 tabIndex={-1}
                 role="menuitem"
                 className={clsx(
-                  'relative cursor-pointer leading-42px font-medium bg-purple-200 bg-opacity-25 rounded-md text-purple-700 transition-colors duration-150 outline-none',
+                  'relative cursor-pointer leading-[42px] font-medium bg-purple-200 rounded-md text-purple-700 transition-colors duration-150 outline-none',
+                  { 'bg-opacity-25': activeType !== 'svg' },
                   { 'bg-opacity-75': activeType === 'svg' }
                 )}
                 onMouseEnter={() => setActiveType('svg')}
@@ -322,7 +310,8 @@ const Icon = memo(({ icon }) => {
                 tabIndex={-1}
                 role="menuitem"
                 className={clsx(
-                  'relative cursor-pointer mt-1 leading-42px font-medium bg-purple-200 bg-opacity-25 rounded-md text-purple-700 transition-colors duration-150 outline-none',
+                  'relative cursor-pointer mt-1 leading-[42px] font-medium bg-purple-200 rounded-md text-purple-700 transition-colors duration-150 outline-none',
+                  { 'bg-opacity-25': activeType !== 'jsx' },
                   { 'bg-opacity-75': activeType === 'jsx' }
                 )}
                 onMouseEnter={() => setActiveType('jsx')}
@@ -366,8 +355,8 @@ function Icons({ icons, className = '', filter }) {
 
 function Header({ version }) {
   return (
-    <header className="bg-gradient-to-r from-purple-700 to-grape px-4 sm:px-6 lg:px-16">
-      <div className="max-w-container mx-auto divide-y divide-black divide-opacity-12">
+    <header className="bg-gradient-to-r from-purple-700 to-[#a65fec] px-4 sm:px-6 lg:px-16">
+      <div className="max-w-10xl mx-auto divide-y divide-black divide-opacity-10">
         <div className="py-6 flex items-center text-sm leading-5">
           <svg width="168" height="34" fill="none">
             <path
@@ -387,12 +376,7 @@ function Header({ version }) {
               href={SHARE_LINK}
               className="flex items-center space-x-2 text-white hover:text-purple-200 transition-colors duration-150 font-semibold"
             >
-              <svg
-                width="20"
-                height="20"
-                fill="currentColor"
-                className="text-white opacity-40"
-              >
+              <svg width="20" height="20" fill="currentColor" className="text-white opacity-40">
                 <path d="M6.29 18.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0020 3.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.073 4.073 0 01.8 7.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 010 16.407a11.616 11.616 0 006.29 1.84" />
               </svg>
               <p>
@@ -415,14 +399,12 @@ function Header({ version }) {
             <h1 className="font-display text-white text-3xl leading-9 font-semibold sm:text-4xl sm:leading-10">
               Beautiful hand-crafted SVG icons,{' '}
               <span className="sm:block text-purple-300">
-                by the makers of{' '}
-                <a href="https://tailwindcss.com">Tailwind CSS</a>.
+                by the makers of <a href="https://tailwindcss.com">Tailwind CSS</a>.
               </span>
             </h1>
-            <dl className="flex flex-wrap justify-center xl:justify-start whitespace-no-wrap text-purple-100 font-medium mt-3 leading-5">
+            <div className="flex flex-wrap justify-center xl:justify-start whitespace-no-wrap text-purple-100 font-medium mt-3 leading-5">
               <div className="flex items-center mx-3 sm:mx-4 xl:ml-0 xl:mr-8 mt-3">
-                <dt className="mr-2">
-                  <span className="sr-only">Number of icons</span>
+                <div className="mr-2">
                   <svg
                     width="20"
                     height="20"
@@ -436,12 +418,11 @@ function Header({ version }) {
                       clipRule="evenodd"
                     />
                   </svg>
-                </dt>
-                <dd>{iconsMedium.length} Icons</dd>
+                </div>
+                <div>{iconsMedium.length} Icons</div>
               </div>
               <div className="flex items-center mx-3 sm:mx-4 xl:ml-0 xl:mr-8 mt-3">
-                <dt className="mr-2">
-                  <span className="sr-only">License</span>
+                <div className="mr-2">
                   <svg
                     width="20"
                     height="20"
@@ -455,12 +436,11 @@ function Header({ version }) {
                       clipRule="evenodd"
                     />
                   </svg>
-                </dt>
-                <dd>MIT Licensed</dd>
+                </div>
+                <div>MIT Licensed</div>
               </div>
               <div className="flex items-center mx-3 sm:mx-4 xl:mx-0 mt-3">
-                <dt className="mr-2">
-                  <span className="sr-only">Version</span>
+                <div className="mr-2">
                   <svg
                     width="20"
                     height="20"
@@ -470,43 +450,37 @@ function Header({ version }) {
                   >
                     <path
                       fillRule="evenodd"
-                      d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z"
+                      d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z"
                       clipRule="evenodd"
                     />
                   </svg>
-                </dt>
-                <dd>Version {version}</dd>
+                </div>
+                <div>React + Vue Libraries</div>
               </div>
-            </dl>
+            </div>
           </div>
           <div className="w-full sm:w-auto flex-none flex flex-col-reverse sm:flex-row sm:items-start space-y-3 space-y-reverse sm:space-y-0 sm:space-x-4 mt-10 mx-auto xl:mx-0">
             <div>
-              <a
-                href={`https://github.com/tailwindlabs/heroicons/archive/v${version}.zip`}
-                className="group flex"
-              >
+              <a href={`https://github.com/tailwindlabs/heroicons`} className="group flex">
                 <div className="w-full sm:w-auto inline-flex items-center justify-center text-purple-900 group-hover:text-purple-500 font-medium leading-none bg-white rounded-lg shadow-sm group-hover:shadow-lg py-3 px-5 border border-transparent transform group-hover:-translate-y-0.5 transition-all duration-150">
                   <svg
                     width="24"
                     height="24"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    className="text-purple-400 mr-3"
+                    fill="currentColor"
+                    className="text-purple-600 mr-3 text-opacity-50 transform"
                   >
                     <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M15 13l-3 3m0 0l-3-3m3 3V8m0 13a9 9 0 110-18 9 9 0 010 18z"
+                      fillRule="evenodd"
+                      clipRule="evenodd"
+                      d="M12 2C6.477 2 2 6.463 2 11.97c0 4.404 2.865 8.14 6.839 9.458.5.092.682-.216.682-.48 0-.236-.008-.864-.013-1.695-2.782.602-3.369-1.337-3.369-1.337-.454-1.151-1.11-1.458-1.11-1.458-.908-.618.069-.606.069-.606 1.003.07 1.531 1.027 1.531 1.027.892 1.524 2.341 1.084 2.91.828.092-.643.35-1.083.636-1.332-2.22-.251-4.555-1.107-4.555-4.927 0-1.088.39-1.979 1.029-2.675-.103-.252-.446-1.266.098-2.638 0 0 .84-.268 2.75 1.022A9.606 9.606 0 0112 6.82c.85.004 1.705.114 2.504.336 1.909-1.29 2.747-1.022 2.747-1.022.546 1.372.202 2.386.1 2.638.64.696 1.028 1.587 1.028 2.675 0 3.83-2.339 4.673-4.566 4.92.359.307.678.915.678 1.846 0 1.332-.012 2.407-.012 2.734 0 .267.18.577.688.48C19.137 20.107 22 16.373 22 11.969 22 6.463 17.522 2 12 2z"
                     />
                   </svg>
-                  Download all
+                  <span>Documentation</span>
                 </div>
               </a>
             </div>
             <a
-              href="https://github.com/tailwindlabs/heroicons"
+              href="https://www.figma.com/community/file/958423903283802665/heroiconsZ"
               className="group flex"
             >
               <div className="w-full sm:w-auto inline-flex items-center justify-center text-white font-medium bg-white bg-opacity-20 group-hover:bg-opacity-30 rounded-lg shadow-sm group-hover:shadow-lg py-3 px-5 border border-white border-opacity-10 transform group-hover:-translate-y-0.5 transition-all duration-150">
@@ -514,15 +488,15 @@ function Header({ version }) {
                   width="24"
                   height="24"
                   fill="currentColor"
-                  className="text-white mr-3 text-opacity-50"
+                  className="text-white mr-3 text-opacity-75 transform"
                 >
                   <path
                     fillRule="evenodd"
+                    d="M5.037 5.785a3.747 3.747 0 013.748-3.748h6.43a3.747 3.747 0 012.056 6.882 3.747 3.747 0 01-2.056 6.881h-.08c-.971 0-1.856-.37-2.521-.975v3.454c0 2.097-1.722 3.788-3.81 3.788-2.064 0-3.767-1.672-3.767-3.747 0-1.31.673-2.464 1.692-3.134a3.744 3.744 0 01-1.692-3.134c0-1.31.673-2.464 1.692-3.133a3.744 3.744 0 01-1.692-3.134zm6.349 3.747v5.04H8.767a2.52 2.52 0 01.018-5.04h2.6zM8.785 15.8h-.018a2.52 2.52 0 00-2.502 2.52c0 1.386 1.143 2.52 2.54 2.52 1.42 0 2.58-1.152 2.58-2.56V15.8h-2.6zm0-12.535a2.52 2.52 0 100 5.04h2.6v-5.04h-2.6zm3.83 0v5.04h2.6a2.52 2.52 0 000-5.04h-2.6zm0 8.787a2.52 2.52 0 012.52-2.52h.08a2.52 2.52 0 010 5.04h-.08a2.52 2.52 0 01-2.52-2.52z"
                     clipRule="evenodd"
-                    d="M12 2C6.477 2 2 6.463 2 11.97c0 4.404 2.865 8.14 6.839 9.458.5.092.682-.216.682-.48 0-.236-.008-.864-.013-1.695-2.782.602-3.369-1.337-3.369-1.337-.454-1.151-1.11-1.458-1.11-1.458-.908-.618.069-.606.069-.606 1.003.07 1.531 1.027 1.531 1.027.892 1.524 2.341 1.084 2.91.828.092-.643.35-1.083.636-1.332-2.22-.251-4.555-1.107-4.555-4.927 0-1.088.39-1.979 1.029-2.675-.103-.252-.446-1.266.098-2.638 0 0 .84-.268 2.75 1.022A9.606 9.606 0 0112 6.82c.85.004 1.705.114 2.504.336 1.909-1.29 2.747-1.022 2.747-1.022.546 1.372.202 2.386.1 2.638.64.696 1.028 1.587 1.028 2.675 0 3.83-2.339 4.673-4.566 4.92.359.307.678.915.678 1.846 0 1.332-.012 2.407-.012 2.734 0 .267.18.577.688.48C19.137 20.107 22 16.373 22 11.969 22 6.463 17.522 2 12 2z"
                   />
                 </svg>
-                View on GitHub
+                <span>Get Figma File</span>
               </div>
             </a>
           </div>
@@ -535,7 +509,7 @@ function Header({ version }) {
 function Footer() {
   return (
     <footer className="bg-gray-50 border-t border-gray-200 py-12 md:py-14 px-4 sm:px-6 lg:px-16 text-sm leading-5">
-      <div className="max-w-container mx-auto text-center space-y-6 md:space-y-0 md:text-left md:flex">
+      <div className="max-w-10xl mx-auto text-center space-y-6 md:space-y-0 md:text-left md:flex">
         <div className="space-y-6 md:space-y-0 md:space-x-10 flex flex-col items-center md:flex-row">
           <div className="flex items-center space-x-2">
             <svg width="30" height="18" fill="#16BDCA">
@@ -579,7 +553,7 @@ function Footer() {
         </div>
         <a
           href={SHARE_LINK}
-          className="inline-flex items-center space-x-2 text-twitter-blue ml-auto font-medium"
+          className="inline-flex items-center space-x-2 text-[#1da1f2] ml-auto font-medium"
         >
           <svg width="20" height="20" fill="currentColor">
             <path d="M6.29 18.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0020 3.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.073 4.073 0 01.8 7.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 010 16.407a11.616 11.616 0 006.29 1.84" />
@@ -631,11 +605,8 @@ function Search() {
       className="group sticky top-0 z-50 bg-white px-4 sm:px-6 lg:px-16 shadow"
       onSubmit={(e) => e.preventDefault()}
     >
-      <div className="max-w-container mx-auto flex">
-        <label
-          htmlFor="search-input"
-          className="flex-none pr-3 flex items-center"
-        >
+      <div className="max-w-10xl mx-auto flex">
+        <label htmlFor="search-input" className="flex-none pr-3 flex items-center">
           <span className="sr-only">Search all {iconsMedium.length} icons</span>
           <svg
             width="24"
@@ -674,12 +645,7 @@ function IconsContainer() {
   if (filter && filter.length === 0) {
     return (
       <div className="pt-10 pb-16 sm:pt-24 sm:pb-36 lg:pt-40 lg:pb-56 text-center">
-        <svg
-          width="96"
-          height="96"
-          fill="none"
-          className="mx-auto mb-6 text-gray-900"
-        >
+        <svg width="96" height="96" fill="none" className="mx-auto mb-6 text-gray-900">
           <path
             d="M36 28.024A18.05 18.05 0 0025.022 39M59.999 28.024A18.05 18.05 0 0170.975 39"
             stroke="currentColor"
@@ -720,46 +686,32 @@ function IconsContainer() {
 
   return (
     <div
-      className="relative grid grid-cols-2 items-start gap-x-8 sm:gap-x-12 lg:gap-x-16 gap-y-4 sm:gap-y-8 max-w-container mx-auto pt-6 sm:pt-8 pb-12"
+      className="relative grid grid-cols-2 items-start gap-x-8 sm:gap-x-12 lg:gap-x-16 gap-y-4 sm:gap-y-8 max-w-10xl mx-auto pt-6 sm:pt-8 pb-12"
       style={{ gridTemplateRows: 'auto auto' }}
     >
       <section className="contents">
         <header className="col-start-1 row-start-1 flex flex-wrap items-baseline">
-          <h2 className="flex-none text-lg leading-6 font-medium text-gray-900 mr-3">
-            Medium
-          </h2>
+          <h2 className="flex-none text-lg leading-6 font-medium text-gray-900 mr-3">Outline</h2>
           <p className="hidden sm:block flex-auto text-gray-400 text-sm leading-5 font-medium">
             2px stroke weight, 24x24 bounding box
           </p>
           <p className="hidden sm:block flex-none w-full text-sm leading-5 mt-3">
-            For primary navigation and marketing sections, designed to be
-            rendered at 24x24.
+            For primary navigation and marketing sections, designed to be rendered at 24x24.
           </p>
         </header>
-        <Icons
-          icons={iconsMedium}
-          filter={filter}
-          className="col-start-1 row-start-2"
-        />
+        <Icons icons={iconsMedium} filter={filter} className="col-start-1 row-start-2" />
       </section>
       <section className="contents">
         <header className="col-start-2 row-start-1 flex flex-wrap items-baseline">
-          <h2 className="flex-none text-lg leading-6 font-medium text-gray-900 mr-3">
-            Small
-          </h2>
+          <h2 className="flex-none text-lg leading-6 font-medium text-gray-900 mr-3">Solid</h2>
           <p className="hidden sm:block flex-auto text-gray-400 text-sm leading-5 font-medium">
             Solid fill, 20x20 bounding box
           </p>
           <p className="hidden sm:block flex-none w-full text-sm leading-5 mt-3">
-            For buttons, form elements, and to support text, designed to be
-            rendered at 20x20.
+            For buttons, form elements, and to support text, designed to be rendered at 20x20.
           </p>
         </header>
-        <Icons
-          icons={iconsSmall}
-          filter={filter}
-          className="col-start-2 row-start-2"
-        />
+        <Icons icons={iconsSmall} filter={filter} className="col-start-2 row-start-2" />
       </section>
       <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gray-200" />
     </div>
@@ -802,9 +754,7 @@ export default function Home({ version }) {
         <meta property="og:title" content="Heroicons" />
         <meta
           property="og:image"
-          content={`https://heroicons.com${
-            require('../img/social-card.jpg').default
-          }`}
+          content={`https://heroicons.com${require('../img/social-card.jpg').default}`}
         />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@tailwindlabs" />
@@ -815,9 +765,7 @@ export default function Home({ version }) {
         />
         <meta
           name="twitter:image"
-          content={`https://heroicons.com${
-            require('../img/social-card.jpg').default
-          }`}
+          content={`https://heroicons.com${require('../img/social-card.jpg').default}`}
         />
       </Head>
       {/* <Header version={version} /> */}
